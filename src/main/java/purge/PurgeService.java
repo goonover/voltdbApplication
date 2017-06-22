@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import static java.nio.file.StandardOpenOption.APPEND;
 
 /**
- * 整个服务的串联点，把规则扫描{@link RulesMaintainer},Voltdb资源监视器{@link VoltdbMonitor},
+ * 整个服务的串联点，把规则扫描{@link SQLRulesMaintainer},Voltdb资源监视器{@link VoltdbMonitor},
  * 负责与客户端交互的{@link PurgeServer}统一配置，控制开关以及作为中间人提供资源访问
  * 用于方便定义规则自动清除voltdb冗余数据，以免内存耗尽中止服务
  * Created by swqsh on 2017/6/16.
@@ -44,8 +44,11 @@ public class PurgeService {
     //voltdb的管理员端口
     private int voltadminPort=21211;
 
-    //规则列表的路径
-    private String ruleFilePath;
+    //SQL规则列表的路径
+    private String sqlRuleFilePath;
+    
+    //voltdb存储过程规则列表路径
+    private String proceduresRuleFilePath;
 
     //监听客户端的服务器
     private PurgeServer webServer;
@@ -61,12 +64,18 @@ public class PurgeService {
     private final String purgeroot="purgeroot";
     private final String deployment="deployment.properties";
     private final String rules="rules";
+    private final String procedures="procedures";
 
     ScheduledExecutorService scheduledExecutorService= Executors.newScheduledThreadPool(2);
 
+    //voltdb客户端，由于没有必要追求高吞吐率（对于清理服务而言，20万的tps足够了），一个客户端足以
     private Client client;
+    
+    //voltdb资源监视器
     private VoltdbMonitor voltdbMonitor;
-    private RulesMaintainer rulesMaintainer;
+    
+    private SQLRulesMaintainer sqlRulesMaintainer;
+    private PurgeProceduresMaintainer purgeProceduresMaintainer;
 
     public PurgeService(){
         Path deploymentPath=Paths.get(currentPath,purgeroot,deployment);
@@ -110,7 +119,8 @@ public class PurgeService {
             e.printStackTrace();
         }
         this.voltdbMonitor=new VoltdbMonitor(this,client,threshold);
-        this.rulesMaintainer=new RulesMaintainer(this.ruleFilePath);
+        this.sqlRulesMaintainer=new SQLRulesMaintainer(sqlRuleFilePath);
+        this.purgeProceduresMaintainer=new PurgeProceduresMaintainer(proceduresRuleFilePath);
         if(enableWeb){
             webServer=new PurgeServer(this);
         }
@@ -120,7 +130,7 @@ public class PurgeService {
      * PurgeService开始服务
      */
     public void start(){
-        scheduledExecutorService.scheduleAtFixedRate(rulesMaintainer,0,updateFrequency, TimeUnit.SECONDS);
+        scheduledExecutorService.scheduleAtFixedRate(sqlRulesMaintainer,0,updateFrequency, TimeUnit.SECONDS);
         //scheduledExecutorService.scheduleAtFixedRate(voltdbMonitor,3,cleanFrequency,TimeUnit.SECONDS);
         if(webServer!=null)
             webServer.start();
@@ -133,11 +143,11 @@ public class PurgeService {
     public void shutdown(){
         logger.info("PurgeService is going to shutdown!");
         scheduledExecutorService.shutdown();
-        rulesMaintainer.shutdown();
+        sqlRulesMaintainer.shutdown();
     }
 
-    public List<String> getRules(){
-        return rulesMaintainer.getOperations();
+    public List<String> getSqlRules(){
+        return sqlRulesMaintainer.getRules();
     }
 
     /**
@@ -145,26 +155,63 @@ public class PurgeService {
      * @param rule
      * @return
      */
-    public boolean removeRule(String rule){
-        return rulesMaintainer.removeRule(rule);
+    public boolean removeSqlRule(String rule){
+        return sqlRulesMaintainer.removeRule(rule);
     }
 
-    public boolean removeRules(List<String> rulesToBeRemoved){
-        return rulesMaintainer.removeRules(rulesToBeRemoved);
+    public List<String> removeSqlRules(List<String> rulesToBeRemoved){
+        return sqlRulesMaintainer.removeRules(rulesToBeRemoved);
     }
 
-    public boolean addRules(List<String> rulesToBeAdded){
-        return rulesMaintainer.addRules(rulesToBeAdded);
+    public List<String> addSqlRules(List<String> rulesToBeAdded){
+        return sqlRulesMaintainer.addRules(rulesToBeAdded);
     }
 
+    public List<PurgeVoltProcedure> getProcedureRules(){
+        return purgeProceduresMaintainer.getRules();
+    }
 
+    public List<PurgeVoltProcedure> addProcedureRules(List<PurgeVoltProcedure> rulesToBeAdded){
+        return purgeProceduresMaintainer.addRules(rulesToBeAdded);
+    }
+
+    public List<PurgeVoltProcedure> removeProcedureRules(List<PurgeVoltProcedure> rulesToBeRemoved){
+        return purgeProceduresMaintainer.removeRules(rulesToBeRemoved);
+    }
+
+    /**
+     * 执行规则列表中的所有语句，所有配置了要执行的存储过程
+     * TODO://处理集群已暂停的情况
+     */
+    public void purge(){
+        try {
+            executeAllSqlRules();
+            callAllPurgeProcedure();
+        } catch (IOException e) {
+            logger.warn(e);
+        }
+    }
+    
+    private void executeAllSqlRules() throws IOException {
+        for(String command:sqlRulesMaintainer.getRules()){
+            client.callProcedure(new PurgeCallback(command),"@AdHoc",command);
+        }
+    }
+    
+    private void callAllPurgeProcedure() throws IOException {
+        for(PurgeVoltProcedure procedure:purgeProceduresMaintainer.getRules()){
+            client.callProcedure(new PurgeProcedureCallback(procedure),procedure.getProcedureName(),procedure.getParams());
+        }
+    }
+    
     private void configure(Properties properties){
         String servers=properties.getProperty("servers");
         String threshold=properties.getProperty("threshold");
         String updateFrequency=properties.getProperty("updateFrequency");
         String cleanFrequency=properties.getProperty("cleanFrequency");
         String voltadminPort=properties.getProperty("voltadminPort");
-        String ruleFilePath=properties.getProperty("ruleFilePath");
+        String sqlRuleFilePath=properties.getProperty("sqlRuleFilePath");
+        String procedureRulesFilePath=properties.getProperty("procedureRulesFilePath");
 
         assert (servers!=null);
         this.servers=servers;
@@ -180,7 +227,8 @@ public class PurgeService {
         if(voltadminPort!=null)
             this.voltadminPort=Integer.parseInt(voltadminPort);
 
-        this.ruleFilePath=ruleFilePath;
+        this.sqlRuleFilePath=sqlRuleFilePath;
+        this.proceduresRuleFilePath=procedureRulesFilePath;
 
         //补充完用户配置可能省略掉的部分后，purgeServiceProperties才是实际的配置
         purgeServiceProperties.put("servers",this.servers);
@@ -197,23 +245,11 @@ public class PurgeService {
             System.exit(-1);
         }
 
-        this.ruleFilePath=Paths.get(currentPath,purgeroot,rules).toString();
+        //把sql规则列表以及procedure规则列表设置为正式运行时列表所在路径
+        this.sqlRuleFilePath=Paths.get(currentPath,purgeroot,rules).toString();
+        this.proceduresRuleFilePath=Paths.get(currentPath,purgeroot,procedures).toString();
     }
 
-    /**
-     * 执行规则列表中的所有语句
-     * TODO://目前只支持adhoc的sql语句，以后将会支持调用其它存储过程，处理集群已暂停的情况
-     */
-    public void purge(){
-        System.out.println(rulesMaintainer.getOperations());
-       for(String command:rulesMaintainer.getOperations()){
-            try {
-                client.callProcedure(new PurgeCallback(command),"@AdHoc",command);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 
     /**
      * 检查配置目录以及文件是否存在，如不存在，则创建文件及目录，如果在操作文件时出现异常，
@@ -227,6 +263,7 @@ public class PurgeService {
         }
         Path deploymentPath=Paths.get(currentPath,purgeroot,deployment);
         Path rulesPath=Paths.get(currentPath,purgeroot,rules);
+        Path proceduresPath=Paths.get(currentPath,purgeroot,procedures);
 
        //不存在purgeroot的目录，创建该目录，创建失败即退出
         if(!Files.exists(purgerootPath)) {
@@ -241,7 +278,12 @@ public class PurgeService {
         //对于rules，处理是把配置中rules路径的文档的内容复制到rules文档的末尾，而不是直接将其替代
         if(!Files.exists(rulesPath))
             Files.createFile(rulesPath);
-        writeRulesToFile(rulesPath);
+        writeSqlRulesToFile(rulesPath);
+
+        if(!Files.exists(proceduresPath)){
+            Files.createFile(proceduresPath);
+        }
+        writeProcedureRulesToFile(proceduresPath);
     }
 
     /**
@@ -256,13 +298,26 @@ public class PurgeService {
     }
 
     //把配置中目录的内容复制到新建的file之中
-    public void writeRulesToFile(Path rulesPath) throws IOException {
-        logger.info("writing rules to purgeroot/rules");
-        List<String> rulesList=RulesMaintainer.parseOperationsFromFile(ruleFilePath);
+    private void writeSqlRulesToFile(Path rulesPath) throws IOException {
+        logger.info("writing sql rules to purgeroot/rules");
+        List<String> rulesList=SQLRulesMaintainer.parseOperationsFromFile(sqlRuleFilePath);
         BufferedWriter writer=Files.newBufferedWriter(rulesPath,APPEND);
         writer.write("\n");
         for(String aRule:rulesList){
             writer.write(aRule+"\n");
+        }
+        writer.flush();
+        writer.close();
+    }
+
+    private void writeProcedureRulesToFile(Path procedureRulesPath) throws IOException {
+        if(this.proceduresRuleFilePath==null)
+            return;
+        logger.info("writing procedure rules to purgeroot/procedures");
+        PurgeProceduresMaintainer tempMaintainer=new PurgeProceduresMaintainer(this.proceduresRuleFilePath);
+        BufferedWriter writer=Files.newBufferedWriter(procedureRulesPath);
+        for(PurgeVoltProcedure procedure:tempMaintainer.getRules()){
+            writer.write(procedure.toString()+"\n");
         }
         writer.flush();
         writer.close();
@@ -285,8 +340,30 @@ public class PurgeService {
                 String cause=clientResponse.getStatusString();
                 logger.warn(cause);
                 if(cause.contains("SQL Syntax error")) {
-                    rulesMaintainer.remove(statement);
+                    sqlRulesMaintainer.removeRule(statement);
                 }
+            }
+        }
+    }
+
+    /**
+     * 任何调用失败的存储过程都将被移除，TODO:加上次数统计，当失败次数达到三次时才移除
+     */
+    class PurgeProcedureCallback implements ProcedureCallback{
+        
+        private PurgeVoltProcedure procedure;
+        
+        public PurgeProcedureCallback(PurgeVoltProcedure procedure){
+            this.procedure=procedure;
+        }
+
+        @Override
+        public void clientCallback(ClientResponse clientResponse) throws Exception {
+            if(clientResponse.getStatus()!=ClientResponse.SUCCESS){
+                logger.error("call procedure:"+procedure.getProcedureName()+" failed," +
+                        "ready to remove it from the procedure list");
+                logger.error(clientResponse.getStatusString());
+                purgeProceduresMaintainer.removeRule(procedure);
             }
         }
     }

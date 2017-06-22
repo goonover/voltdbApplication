@@ -9,7 +9,7 @@ import java.util.Map;
  * Created by swqsh on 2017/6/19.
  */
 public enum  PurgeMessageType {
-    GETALL,REMOVE,ADD,PLAINTEXT,SHUTDOWN;
+    GETALL,REMOVESQLS,ADDSQLS,SHOWPROCEDURES,ADDPROCEDURES,REMOVEPROCEDURES,PLAINTEXT,SHUTDOWN;
 
     private static final Map<Integer,PurgeMessageType> lookup=new HashMap<>();
 

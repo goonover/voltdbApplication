@@ -13,6 +13,7 @@ public class PurgeClientHandler extends SimpleChannelInboundHandler<PurgeMessage
 
         if(message.type==PurgeMessageType.PLAINTEXT){
             System.out.println(message.value);
+            System.out.println("Please enter a command:");
         }
 
         //客户端收到getAll类型的均为服务器对客户端的响应

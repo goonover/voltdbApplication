@@ -3,8 +3,10 @@ package purge.webserver;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import purge.PurgeService;
+import purge.PurgeVoltProcedure;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -31,36 +33,45 @@ public class PurgeServerHandler extends SimpleChannelInboundHandler<PurgeMessage
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext,
                                 PurgeMessage message) throws Exception {
-        /**
-         * 普通文本消息，只是打印出来，用于测试
-         */
-        if(message.type==PurgeMessageType.PLAINTEXT){
-            printPlainText(message);
-        }
-        /**
-         * 关闭类型消息，关闭服务器
-         */
-        if(message.type==PurgeMessageType.SHUTDOWN){
-            shutdown();
+        switch (message.type){
+            /**
+             * 普通文本消息，只是打印出来，用于测试
+             */
+            case PLAINTEXT:
+                printPlainText(message);
+                break;
+            //添加sql规则
+            case ADDSQLS:
+                addSqlRules(message);
+                break;
+            //删除sql规则
+            case REMOVESQLS:
+                removeSqlRules(message);
+            //把所有规则发回到客户端
+            case GETALL:
+                sendAllRulesToClient(message);
+                break;
+            //把所有存储过程及参数发回到客户端
+            case SHOWPROCEDURES:
+                sendAllProceduresToClient(message);
+                break;
+            //添加存储过程
+            case ADDPROCEDURES:
+                addProcedures(message);
+                break;
+            case REMOVEPROCEDURES:
+                removeProcedures(message);
+                break;
+            case SHUTDOWN:
+                shutdown();
+                break;
+            default:
+                break;
         }
 
-        //把所有规则发回到客户端
-        if(message.type==PurgeMessageType.GETALL){
-            sendAllRulesToClient(message);
-        }
-
-        //移除规则
-        if(message.type==PurgeMessageType.REMOVE){
-            removeRules(message);
-        }
-
-        //添加规则
-        if(message.type==PurgeMessageType.ADD){
-            addRules(message);
-        }
     }
 
-    //处理普通文本类型
+    //处理普通文本类型，应该永远不会被调用
     private void printPlainText(PurgeMessage message){
         System.out.println(message.value);
     }
@@ -74,45 +85,81 @@ public class PurgeServerHandler extends SimpleChannelInboundHandler<PurgeMessage
 
     //把所有的规则返回到客户端
     private void sendAllRulesToClient(PurgeMessage message){
-        String res="";
-        for(String aRule:purgeService.getRules()){
+        String res="All the sql rules are shown below:\n";
+        for(String aRule:purgeService.getSqlRules()){
             if(!aRule.endsWith(";"))
                 aRule+=";";
-            res+=aRule;
+            res+=aRule+"\n";
         }
+        message.type(PurgeMessageType.PLAINTEXT);
         message.value(res);
         ctx.writeAndFlush(message);
     }
 
-    private void removeRules(PurgeMessage message){
-        String rule=message.value.trim();
-        //boolean removed=purgeService.removeRules(Arrays.asList(rule.split(";")));
-        boolean removed=purgeService.removeRule(rule);
-        message.type(PurgeMessageType.PLAINTEXT);
-        if(removed){
-            message.value("rule:\""+rule+"\" has been removed successfully!");
-        }else{
-            message.value("rule:\""+rule+"\" can't be found, please check if the spelling is correct");
+    private void sendAllProceduresToClient(PurgeMessage message){
+        String res="ProcedureName           params\n";
+        for(PurgeVoltProcedure procedure:purgeService.getProcedureRules()){
+            res+=procedure.getProcedureName()+"         "+Arrays.asList(procedure.getParams())+"\n";
         }
+        message.type(PurgeMessageType.PLAINTEXT);
+        message.value(res);
         ctx.writeAndFlush(message);
     }
 
-    private void addRules(PurgeMessage message){
+    private void removeSqlRules(PurgeMessage message){
+        String rule=message.value.trim();
+        String[] temp=rule.split(";");
+        List<String> sqlRulesToBeRemoved=new ArrayList<>();
+        for(String aRule:temp){
+            sqlRulesToBeRemoved.add(aRule.trim()+";");
+        }
+        List<String> removed=purgeService.removeSqlRules(sqlRulesToBeRemoved);
+        message.type(PurgeMessageType.PLAINTEXT);
+        message.value("rule:\""+removed+"\" has been removed successfully!");
+
+        ctx.writeAndFlush(message);
+    }
+
+    private void addSqlRules(PurgeMessage message){
         String source=message.value.trim();
         String[] temp=source.split(";");
         List<String> rulesToBeAdded=new ArrayList<>();
         for(String aRule:temp){
-            rulesToBeAdded.add(aRule+";");
+            rulesToBeAdded.add(aRule.trim()+";");
         }
-        boolean added=purgeService.addRules(rulesToBeAdded);
+        List<String> added=purgeService.addSqlRules(rulesToBeAdded);
         message.type(PurgeMessageType.PLAINTEXT);
-        if(added){
-            message.value("rules:\""+source+"\" have been added successfully");
-        }else{
-            message.value("try to add rules:\""+source+"\" failed,please try again");
-        }
+        message.value("rules:\""+added+"\" have been added successfully");
+
         ctx.writeAndFlush(message);
     }
+
+    private void addProcedures(PurgeMessage message){
+        List<PurgeVoltProcedure> rulesToBeAdded=getProcedureListFromMessage(message);
+        List<PurgeVoltProcedure> added=purgeService.addProcedureRules(rulesToBeAdded);
+        message.type(PurgeMessageType.PLAINTEXT);
+        message.value("procedures:\""+added+"\" have been added successfully");
+        ctx.writeAndFlush(message);
+    }
+
+    private void removeProcedures(PurgeMessage message){
+        List<PurgeVoltProcedure> rulesToBeRemoved=getProcedureListFromMessage(message);
+        List<PurgeVoltProcedure> removed=purgeService.removeProcedureRules(rulesToBeRemoved);
+        message.type(PurgeMessageType.PLAINTEXT);
+        message.value("procedures:\""+removed+"\" have been removed successfully");
+        ctx.writeAndFlush(message);
+    }
+
+    private List<PurgeVoltProcedure> getProcedureListFromMessage(PurgeMessage message){
+        String source=message.value.trim();
+        String[] temp=source.split(";");
+        List<PurgeVoltProcedure> result=new ArrayList<>();
+        for(String aRule:temp){
+            result.add(PurgeVoltProcedure.parseProcedureFromStr(aRule.trim()));
+        }
+        return result;
+    }
+
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
