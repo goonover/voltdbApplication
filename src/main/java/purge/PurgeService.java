@@ -60,7 +60,6 @@ public class PurgeService {
 
     //在当前路径下创建purgeroot目录，该目录下保存着跟该PurgeService相关的配置文件和规则列表
     private final String currentPath=System.getProperty("user.dir");
-    //private final String purgeroot=currentPath+"//purgeroot";
     private final String purgeroot="purgeroot";
     private final String deployment="deployment.properties";
     private final String rules="rules";
@@ -131,7 +130,8 @@ public class PurgeService {
      */
     public void start(){
         scheduledExecutorService.scheduleAtFixedRate(sqlRulesMaintainer,0,updateFrequency, TimeUnit.SECONDS);
-        //scheduledExecutorService.scheduleAtFixedRate(voltdbMonitor,3,cleanFrequency,TimeUnit.SECONDS);
+        scheduledExecutorService.scheduleAtFixedRate(purgeProceduresMaintainer,0,updateFrequency,TimeUnit.SECONDS);
+        scheduledExecutorService.scheduleAtFixedRate(voltdbMonitor,3,cleanFrequency,TimeUnit.SECONDS);
         if(webServer!=null)
             webServer.start();
     }
@@ -146,24 +146,19 @@ public class PurgeService {
         sqlRulesMaintainer.shutdown();
     }
 
-    public List<String> getSqlRules(){
+    /**
+     * 获取、添加以及删除sql规则的集合
+     * @return
+     */
+    public List<SQLRule> getSqlRules(){
         return sqlRulesMaintainer.getRules();
     }
 
-    /**
-     * 删除规则
-     * @param rule
-     * @return
-     */
-    public boolean removeSqlRule(String rule){
-        return sqlRulesMaintainer.removeRule(rule);
-    }
-
-    public List<String> removeSqlRules(List<String> rulesToBeRemoved){
+    public List<SQLRule> removeSqlRules(List<SQLRule> rulesToBeRemoved){
         return sqlRulesMaintainer.removeRules(rulesToBeRemoved);
     }
 
-    public List<String> addSqlRules(List<String> rulesToBeAdded){
+    public List<SQLRule> addSqlRules(List<SQLRule> rulesToBeAdded){
         return sqlRulesMaintainer.addRules(rulesToBeAdded);
     }
 
@@ -193,8 +188,8 @@ public class PurgeService {
     }
     
     private void executeAllSqlRules() throws IOException {
-        for(String command:sqlRulesMaintainer.getRules()){
-            client.callProcedure(new PurgeCallback(command),"@AdHoc",command);
+        for(SQLRule command:sqlRulesMaintainer.getRules()){
+            client.callProcedure(new PurgeCallback(command),"@AdHoc",command.toString());
         }
     }
     
@@ -300,11 +295,11 @@ public class PurgeService {
     //把配置中目录的内容复制到新建的file之中
     private void writeSqlRulesToFile(Path rulesPath) throws IOException {
         logger.info("writing sql rules to purgeroot/rules");
-        List<String> rulesList=SQLRulesMaintainer.parseOperationsFromFile(sqlRuleFilePath);
+        List<SQLRule> rulesList=SQLRulesMaintainer.parseOperationsFromFile(sqlRuleFilePath);
         BufferedWriter writer=Files.newBufferedWriter(rulesPath,APPEND);
         writer.write("\n");
-        for(String aRule:rulesList){
-            writer.write(aRule+"\n");
+        for(SQLRule aRule:rulesList){
+            writer.write(aRule.toString()+"\n");
         }
         writer.flush();
         writer.close();
@@ -328,9 +323,9 @@ public class PurgeService {
      */
     class PurgeCallback implements ProcedureCallback{
 
-        private String statement;
+        private SQLRule statement;
 
-        public PurgeCallback(String statement){
+        public PurgeCallback(SQLRule statement){
             this.statement=statement;
         }
 
@@ -341,13 +336,20 @@ public class PurgeService {
                 logger.warn(cause);
                 if(cause.contains("SQL Syntax error")) {
                     sqlRulesMaintainer.removeRule(statement);
+                }else {
+                    statement.fail();
+                    if(statement.shouldBeRemoved())
+                        sqlRulesMaintainer.removeRule(statement);
                 }
+            }else {
+                statement.reset();
             }
         }
     }
 
     /**
-     * 任何调用失败的存储过程都将被移除，TODO:加上次数统计，当失败次数达到三次时才移除
+     * 每次调用存储过程时，调用成功则重置当前失败次数；调用失败则将调用次数加1，当存储过程次数大于最大失败
+     * 次数时，从待调用存储过程队列移除该存储过程
      */
     class PurgeProcedureCallback implements ProcedureCallback{
         
@@ -363,7 +365,11 @@ public class PurgeService {
                 logger.error("call procedure:"+procedure.getProcedureName()+" failed," +
                         "ready to remove it from the procedure list");
                 logger.error(clientResponse.getStatusString());
-                purgeProceduresMaintainer.removeRule(procedure);
+                procedure.fail();
+                if(procedure.shouldBeRemoved())
+                    purgeProceduresMaintainer.removeRule(procedure);
+            }else{
+                procedure.reset();
             }
         }
     }
