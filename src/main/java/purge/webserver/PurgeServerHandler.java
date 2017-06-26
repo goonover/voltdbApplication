@@ -4,6 +4,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import purge.PurgeService;
 import purge.PurgeVoltProcedure;
+import purge.SQLRule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -86,10 +87,11 @@ public class PurgeServerHandler extends SimpleChannelInboundHandler<PurgeMessage
     //把所有的规则返回到客户端
     private void sendAllRulesToClient(PurgeMessage message){
         String res="All the sql rules are shown below:\n";
-        for(String aRule:purgeService.getSqlRules()){
-            if(!aRule.endsWith(";"))
-                aRule+=";";
-            res+=aRule+"\n";
+        for(SQLRule aRule:purgeService.getSqlRules()){
+            String statement=aRule.getStatement();
+            if(!statement.endsWith(";"))
+                statement+=";";
+            res+=statement+"\n";
         }
         message.type(PurgeMessageType.PLAINTEXT);
         message.value(res);
@@ -109,11 +111,11 @@ public class PurgeServerHandler extends SimpleChannelInboundHandler<PurgeMessage
     private void removeSqlRules(PurgeMessage message){
         String rule=message.value.trim();
         String[] temp=rule.split(";");
-        List<String> sqlRulesToBeRemoved=new ArrayList<>();
+        List<SQLRule> sqlRulesToBeRemoved=new ArrayList<>();
         for(String aRule:temp){
-            sqlRulesToBeRemoved.add(aRule.trim()+";");
+            sqlRulesToBeRemoved.add(new SQLRule(aRule.trim()+";"));
         }
-        List<String> removed=purgeService.removeSqlRules(sqlRulesToBeRemoved);
+        List<SQLRule> removed=purgeService.removeSqlRules(sqlRulesToBeRemoved);
         message.type(PurgeMessageType.PLAINTEXT);
         message.value("rule:\""+removed+"\" has been removed successfully!");
 
@@ -123,11 +125,11 @@ public class PurgeServerHandler extends SimpleChannelInboundHandler<PurgeMessage
     private void addSqlRules(PurgeMessage message){
         String source=message.value.trim();
         String[] temp=source.split(";");
-        List<String> rulesToBeAdded=new ArrayList<>();
+        List<SQLRule> rulesToBeAdded=new ArrayList<>();
         for(String aRule:temp){
-            rulesToBeAdded.add(aRule.trim()+";");
+            rulesToBeAdded.add(new SQLRule(aRule.trim()+";"));
         }
-        List<String> added=purgeService.addSqlRules(rulesToBeAdded);
+        List<SQLRule> added=purgeService.addSqlRules(rulesToBeAdded);
         message.type(PurgeMessageType.PLAINTEXT);
         message.value("rules:\""+added+"\" have been added successfully");
 

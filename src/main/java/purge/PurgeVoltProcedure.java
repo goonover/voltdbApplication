@@ -1,10 +1,12 @@
 package purge;
 
+import java.util.Arrays;
+
 /**
  *存储Voltdb存储过程被调用所需数据
  * Created by swqsh on 2017/6/22.
  */
-public class PurgeVoltProcedure {
+public class PurgeVoltProcedure extends Rule{
 
     private String procedureName;
     private Object[] params;
@@ -69,4 +71,13 @@ public class PurgeVoltProcedure {
         }
         return true;
     }
+
+    @Override
+    public int hashCode(){
+        int result=17;
+        result=31*result+procedureName.hashCode();
+        result=31*result+Arrays.hashCode(params);
+        return result;
+    }
+
 }

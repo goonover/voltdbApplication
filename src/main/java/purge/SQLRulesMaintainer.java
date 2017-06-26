@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -14,7 +15,7 @@ import java.util.List;
  * 的文件之中
  * Created by swqsh on 2017/6/22.
  */
-public class SQLRulesMaintainer extends Maintainer<String> {
+public class SQLRulesMaintainer extends Maintainer<SQLRule> {
 
     public SQLRulesMaintainer(String filePathName) {
         super(filePathName);
@@ -28,8 +29,8 @@ public class SQLRulesMaintainer extends Maintainer<String> {
     /**
      * 读取存储着规则的文件,并将其每条规则独立提取出来，方便统一格式以及处理
      */
-    public static List<String> parseOperationsFromFile(String filePath){
-        ArrayList<String> res=new ArrayList<>();
+    public static List<SQLRule> parseOperationsFromFile(String filePath) throws RuntimeException{
+        ArrayList<SQLRule> res=new ArrayList<>();
         if(filePath==null)
             return res;
         Path sourceFilePath= Paths.get(filePath);
@@ -43,7 +44,7 @@ public class SQLRulesMaintainer extends Maintainer<String> {
                 int index;
                 while ((index=line.indexOf(";"))!=-1){
                     legacy+=line.substring(0,index+1);
-                    res.add(legacy.trim());
+                    res.add(new SQLRule(legacy.trim()));
                     legacy="";
                     line=line.substring(index+1);
                 }
@@ -54,7 +55,7 @@ public class SQLRulesMaintainer extends Maintainer<String> {
                 legacy=legacy.trim();
                 if(!legacy.endsWith(";"))
                     legacy+=";";
-                res.add(legacy);
+                res.add(new SQLRule(legacy));
             }
             reader.close();
         } catch (FileNotFoundException e) {
@@ -72,23 +73,23 @@ public class SQLRulesMaintainer extends Maintainer<String> {
      * @return
      */
     @Override
-    public boolean addRule(String ruleToBeAdded) {
+    public boolean addRule(SQLRule ruleToBeAdded) {
         boolean added=rules.add(ruleToBeAdded);
         modified|=added;
         return added;
     }
 
     @Override
-    public boolean removeRule(String rule) {
+    public boolean removeRule(SQLRule rule) {
         boolean removed=false;
-        String operation="";
-        for(String aRule:rules){
+        SQLRule operation=null;
+        for(SQLRule aRule:rules){
             if(aRule.equals(rule)||aRule.equals(rule+";")) {
                 operation = aRule;
                 break;
             }
         }
-        if(!operation.equals(""))
+        if(operation!=null)
             removed=rules.remove(operation);
         modified|=removed;
         return removed;
