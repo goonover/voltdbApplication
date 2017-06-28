@@ -35,14 +35,17 @@ public class PurgeService {
     //开始清理冗余数据的阈值
     private double threshold=0.5;
 
-    //扫描操作列表的频率
-    private int updateFrequency=30;
-
     //进行清理操作的频率
     private int cleanFrequency=60;
 
     //voltdb的管理员端口
     private int voltadminPort=21211;
+
+    //把规则刷新到文档的时间间隔
+    private int updateFrequency=30;
+
+    //是否允许sql规则列表和存储过程规则列表有重复的条目
+    private boolean allowDuplicated=false;
 
     //SQL规则列表的路径
     private String sqlRuleFilePath;
@@ -118,8 +121,8 @@ public class PurgeService {
             e.printStackTrace();
         }
         this.voltdbMonitor=new VoltdbMonitor(this,client,threshold);
-        this.sqlRulesMaintainer=new SQLRulesMaintainer(sqlRuleFilePath);
-        this.purgeProceduresMaintainer=new PurgeProceduresMaintainer(proceduresRuleFilePath);
+        this.sqlRulesMaintainer=new SQLRulesMaintainer(sqlRuleFilePath,allowDuplicated);
+        this.purgeProceduresMaintainer=new PurgeProceduresMaintainer(proceduresRuleFilePath,allowDuplicated);
         if(enableWeb){
             webServer=new PurgeServer(this);
         }
@@ -207,6 +210,7 @@ public class PurgeService {
         String voltadminPort=properties.getProperty("voltadminPort");
         String sqlRuleFilePath=properties.getProperty("sqlRuleFilePath");
         String procedureRulesFilePath=properties.getProperty("procedureRulesFilePath");
+        this.allowDuplicated=Boolean.parseBoolean(properties.getProperty("allowDuplicated"));
 
         assert (servers!=null);
         this.servers=servers;
@@ -309,7 +313,7 @@ public class PurgeService {
         if(this.proceduresRuleFilePath==null)
             return;
         logger.info("writing procedure rules to purgeroot/procedures");
-        PurgeProceduresMaintainer tempMaintainer=new PurgeProceduresMaintainer(this.proceduresRuleFilePath);
+        PurgeProceduresMaintainer tempMaintainer=new PurgeProceduresMaintainer(this.proceduresRuleFilePath,allowDuplicated);
         BufferedWriter writer=Files.newBufferedWriter(procedureRulesPath);
         for(PurgeVoltProcedure procedure:tempMaintainer.getRules()){
             writer.write(procedure.toString()+"\n");

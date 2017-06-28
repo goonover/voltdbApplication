@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -17,8 +16,12 @@ import java.util.List;
  */
 public class SQLRulesMaintainer extends Maintainer<SQLRule> {
 
-    public SQLRulesMaintainer(String filePathName) {
+    public SQLRulesMaintainer(String filePathName){
         super(filePathName);
+    }
+
+    public SQLRulesMaintainer(String filePathName,boolean allowDuplicated) {
+        super(filePathName,allowDuplicated);
     }
 
     @Override
@@ -68,12 +71,13 @@ public class SQLRulesMaintainer extends Maintainer<SQLRule> {
 
     /**
      * 把SQL规则加到规则列表中，请注意，相同的SQL语句可以重复添加
-     * TODO:添加开关选项判断是否需要禁止重复添加
      * @param ruleToBeAdded
      * @return
      */
     @Override
     public boolean addRule(SQLRule ruleToBeAdded) {
+        if(!allowDuplicated&&rules.contains(ruleToBeAdded))
+            return false;
         boolean added=rules.add(ruleToBeAdded);
         modified|=added;
         return added;

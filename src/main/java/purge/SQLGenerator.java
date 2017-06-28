@@ -56,21 +56,26 @@ public class SQLGenerator {
      * @param value
      * @return
      */
-    public static String elderThan(String timeUnit,String value) {
-        String res="since_epoch(?,now) - since_epoch(?,"+value+")";
+    public static String elderThan(String key,String timeUnit,String value) {
+        String res="since_epoch(?,now) - since_epoch(?,"+key+") > "+value;
         switch (timeUnit){
             case "second":
-                res.replace("?","second");
+                res=res.replace("?","second");
                 break;
             case "micros":
-                res.replace("?","micros");
+                res=res.replace("?","micros");
                 break;
             case "millis":
-                res.replace("?","millis");
+                res=res.replace("?","millis");
                 break;
             default:
                 break;
         }
+        return res;
+    }
+
+    public static String deleteElderThan(String tableName,String columnName,String timeUnit,String value){
+        String res="delete from "+tableName+" where "+elderThan(columnName,timeUnit,value);
         return res;
     }
 }

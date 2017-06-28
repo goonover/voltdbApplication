@@ -23,17 +23,6 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://D:/杂项/test/voltdb-6.9.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="jar://D:/杂项/test/voltdb-6.9.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
           <root url="jar://D:/软件/sdk/jar/super-csv-2.1.0.jar!/" />
         </CLASSES>
         <JAVADOC />

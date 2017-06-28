@@ -16,6 +16,10 @@ public class PurgeProceduresMaintainer extends Maintainer<PurgeVoltProcedure>{
         super(proceduresPathName);
     }
 
+    public PurgeProceduresMaintainer(String proceduresPathName,boolean allowDuplicated){
+        super(proceduresPathName,allowDuplicated);
+    }
+
     /**
      * 从文档读取相关存储过程信息，如在此过程出现异常，系统直接退出
      * @throws IOException
@@ -36,6 +40,8 @@ public class PurgeProceduresMaintainer extends Maintainer<PurgeVoltProcedure>{
     @Override
     public boolean addRule(PurgeVoltProcedure procedureToBeAdded) {
         if(procedureToBeAdded.getProcedureName().contains(" "))
+            return false;
+        if(!allowDuplicated&&rules.contains(procedureToBeAdded))
             return false;
         boolean addSuccessfully=rules.add(procedureToBeAdded);
         modified|=addSuccessfully;
