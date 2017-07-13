@@ -23,6 +23,8 @@ import static java.nio.file.StandardOpenOption.APPEND;
  * 整个服务的串联点，把规则扫描{@link SQLRulesMaintainer},Voltdb资源监视器{@link VoltdbMonitor},
  * 负责与客户端交互的{@link PurgeServer}统一配置，控制开关以及作为中间人提供资源访问
  * 用于方便定义规则自动清除voltdb冗余数据，以免内存耗尽中止服务
+ * 服务预计读写操作不会很频繁，{@link Maintainer}的读写操作是非线程安全的。但是事实上在实现时
+ * 采用单线程的模型，所以非线程安全也没有问题
  * Created by swqsh on 2017/6/16.
  */
 public class PurgeService {
@@ -53,6 +55,9 @@ public class PurgeService {
     //voltdb存储过程规则列表路径
     private String proceduresRuleFilePath;
 
+    //增量日志路径
+    private String aofFilePath;
+
     //监听客户端的服务器
     private PurgeServer webServer;
 
@@ -61,14 +66,18 @@ public class PurgeService {
     //是否开启webServer监听服务器的选项
     private boolean enableWeb=true;
 
+    //是否开启增量日志模式
+    private boolean aofOn = false;
+
     //在当前路径下创建purgeroot目录，该目录下保存着跟该PurgeService相关的配置文件和规则列表
     private final String currentPath=System.getProperty("user.dir");
     private final String purgeroot="purgeroot";
     private final String deployment="deployment.properties";
     private final String rules="rules";
     private final String procedures="procedures";
+    private final String aof = "aof";
 
-    ScheduledExecutorService scheduledExecutorService= Executors.newScheduledThreadPool(2);
+    ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(2);
 
     //voltdb客户端，由于没有必要追求高吞吐率（对于清理服务而言，20万的tps足够了），一个客户端足以
     private Client client;
@@ -78,6 +87,7 @@ public class PurgeService {
     
     private SQLRulesMaintainer sqlRulesMaintainer;
     private PurgeProceduresMaintainer purgeProceduresMaintainer;
+    private AOFWriter aofWriter;
 
     public PurgeService(){
         Path deploymentPath=Paths.get(currentPath,purgeroot,deployment);
@@ -121,10 +131,25 @@ public class PurgeService {
             e.printStackTrace();
         }
         this.voltdbMonitor=new VoltdbMonitor(this,client,threshold);
-        this.sqlRulesMaintainer=new SQLRulesMaintainer(sqlRuleFilePath,allowDuplicated);
-        this.purgeProceduresMaintainer=new PurgeProceduresMaintainer(proceduresRuleFilePath,allowDuplicated);
+        maintainersInit();
         if(enableWeb){
             webServer=new PurgeServer(this);
+        }
+    }
+
+    /**
+     * 根据是否采取增量日志方式来初始化{@link SQLRulesMaintainer}、{@link PurgeProceduresMaintainer}和{@link AOFWriter}
+     */
+    private void maintainersInit(){
+        if(aofOn == true){
+            this.aofWriter = new AOFWriter(aofFilePath);
+            this.sqlRulesMaintainer = new SQLRulesMaintainer(sqlRuleFilePath,allowDuplicated,aofWriter);
+            this.purgeProceduresMaintainer = new PurgeProceduresMaintainer(proceduresRuleFilePath,allowDuplicated,aofWriter);
+            aofWriter.setSqlRulesMaintainer(sqlRulesMaintainer);
+            aofWriter.setPurgeProceduresMaintainer(purgeProceduresMaintainer);
+        }else {
+            this.sqlRulesMaintainer = new SQLRulesMaintainer(sqlRuleFilePath, allowDuplicated);
+            this.purgeProceduresMaintainer = new PurgeProceduresMaintainer(proceduresRuleFilePath, allowDuplicated);
         }
     }
 
@@ -132,8 +157,10 @@ public class PurgeService {
      * PurgeService开始服务
      */
     public void start(){
-        scheduledExecutorService.scheduleAtFixedRate(sqlRulesMaintainer,0,updateFrequency, TimeUnit.SECONDS);
-        scheduledExecutorService.scheduleAtFixedRate(purgeProceduresMaintainer,0,updateFrequency,TimeUnit.SECONDS);
+        if(!aofOn){
+            scheduledExecutorService.scheduleAtFixedRate(sqlRulesMaintainer, 0, updateFrequency, TimeUnit.SECONDS);
+            scheduledExecutorService.scheduleAtFixedRate(purgeProceduresMaintainer, 0, updateFrequency, TimeUnit.SECONDS);
+        }
         scheduledExecutorService.scheduleAtFixedRate(voltdbMonitor,3,cleanFrequency,TimeUnit.SECONDS);
         if(webServer!=null)
             webServer.start();
@@ -211,6 +238,7 @@ public class PurgeService {
         String sqlRuleFilePath=properties.getProperty("sqlRuleFilePath");
         String procedureRulesFilePath=properties.getProperty("procedureRulesFilePath");
         this.allowDuplicated=Boolean.parseBoolean(properties.getProperty("allowDuplicated"));
+        this.aofOn = Boolean.parseBoolean(properties.getProperty("aof"));
 
         assert (servers!=null);
         this.servers=servers;
@@ -247,10 +275,12 @@ public class PurgeService {
         //把sql规则列表以及procedure规则列表设置为正式运行时列表所在路径
         this.sqlRuleFilePath=Paths.get(currentPath,purgeroot,rules).toString();
         this.proceduresRuleFilePath=Paths.get(currentPath,purgeroot,procedures).toString();
+        this.aofFilePath = Paths.get(currentPath,purgeroot,aof).toString();
     }
 
 
     /**
+     * TODO:存在问题，待会修正
      * 检查配置目录以及文件是否存在，如不存在，则创建文件及目录，如果在操作文件时出现异常，
      * 程序直接退出
      */

@@ -20,36 +20,55 @@ public class PurgeProceduresMaintainer extends Maintainer<PurgeVoltProcedure>{
         super(proceduresPathName,allowDuplicated);
     }
 
+    public PurgeProceduresMaintainer(String proceduresPathName,boolean allowDuplicated,AOFWriter writer){
+        super(proceduresPathName,allowDuplicated,writer);
+    }
+
     /**
      * 从文档读取相关存储过程信息，如在此过程出现异常，系统直接退出
      * @throws IOException
      */
     @Override
     void readRulesFromFile() throws IOException {
-        BufferedReader reader= Files.newBufferedReader(rulePath);
-        String line;
-        while ((line=reader.readLine())!=null){
-            PurgeVoltProcedure procedure=parseProcedureFromStr(line);
-            if(procedure!=null){
-                rules.add(procedure);
+        if(aofOn){
+            aofWriter.restoreFromLog();
+        }else {
+            BufferedReader reader = Files.newBufferedReader(rulePath);
+            String line;
+            while ((line = reader.readLine()) != null) {
+                PurgeVoltProcedure procedure = parseProcedureFromStr(line);
+                if (procedure != null) {
+                    rules.add(procedure);
+                }
             }
+            reader.close();
         }
-        reader.close();
     }
 
+    //添加规则
     @Override
-    public boolean addRule(PurgeVoltProcedure procedureToBeAdded) {
+    protected boolean addRule(PurgeVoltProcedure procedureToBeAdded) {
         if(procedureToBeAdded.getProcedureName().contains(" "))
             return false;
         if(!allowDuplicated&&rules.contains(procedureToBeAdded))
             return false;
         boolean addSuccessfully=rules.add(procedureToBeAdded);
+        //写增量日志
+        if(aofOn&&addSuccessfully){
+            try {
+                aofWriter.recordLog(AOFOperation.ADDPROCEDURE,procedureToBeAdded.toString());
+            } catch (IOException e) {
+                logger.warn(e);
+                rules.remove(procedureToBeAdded);
+                return false;
+            }
+        }
         modified|=addSuccessfully;
         return addSuccessfully;
     }
 
     @Override
-    public boolean removeRule(PurgeVoltProcedure procedureToBeRemoved) {
+    protected boolean removeRule(PurgeVoltProcedure procedureToBeRemoved) {
         boolean removedSuccessfully=false;
         PurgeVoltProcedure target=null;
         for(PurgeVoltProcedure aProcedure:rules){
@@ -60,6 +79,16 @@ public class PurgeProceduresMaintainer extends Maintainer<PurgeVoltProcedure>{
         }
         if(target!=null)
             removedSuccessfully=rules.remove(target);
+
+        if(aofOn&&removedSuccessfully){
+            try {
+                aofWriter.recordLog(AOFOperation.REMOVEPROCEDURE,procedureToBeRemoved.toString());
+            } catch (IOException e) {
+                logger.warn(e);
+                rules.add(procedureToBeRemoved);
+                return false;
+            }
+        }
         modified|=removedSuccessfully;
         return removedSuccessfully;
     }

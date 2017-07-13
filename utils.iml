@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
+  <component name="FacetManager">
+    <facet type="AspectJ" name="AspectJ">
+      <configuration />
+    </facet>
+  </component>
   <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8" inherit-compiler-output="false">
     <output url="file://$MODULE_DIR$/target/classes" />
     <output-test url="file://$MODULE_DIR$/target/test-classes" />
@@ -14,10 +19,82 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://D:/软件/sdk/jar/gson-2.8.0.jar!/" />
+          <root url="jar://D:/软件/sdk/jar/voltdb-7.0.1.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="jar://D:/软件/sdk/jar/voltdb-7.0.1.jar!/" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/doc/tutorials/auction/procedures" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/doc/tutorials/auction/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/doc/tutorials/helloworld" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/doc/tutorials/helloworldrevisited" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/adperformance/client" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/adperformance/procedures" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/bank-offers/client" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/bank-offers/procedures" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/callcenter/client" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/callcenter/procedures" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/contentionmark" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/geospatial/client" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/geospatial/procedures" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/json-sessions/client" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/json-sessions/procedures" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/metrocard/client" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/metrocard/procedures" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/nbbo/client" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/nbbo/procedures" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/positionkeeper/client" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/positionkeeper/procedures" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/uniquedevices/client" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/uniquedevices/hyperloglogsrc" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/uniquedevices/procedures" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/voltkv/client" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/voltkv/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/voter/client" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/voter/procedures" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/windowing-with-ddl/client" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/windowing/client" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/examples/windowing/procedures" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/src/frontend" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/src/hsqldb19b3" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/bench/iotest" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/bench/throughput/tasks" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/frontend" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/hsqldb" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/sqlcmd/procedures" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/adhocddl/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/adhocsmash/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/aggbench/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/aggregates/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/csvbenchmark/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/ctindex/client" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/ctindex/procedures" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/dedupe/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/deletes/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/eng1969/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/eng585/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/eng866/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/genqa/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/insertdelete" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/insertdelete/client" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/kvbenchmark/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/oneshotkv/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/osm-import/client" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/overhead/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/scans/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/schemachange/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/tpcc/client" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/tpcc/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/uacbench/client" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/voltkvqa/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/ycsb-zipfian/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/test_apps/ycsb/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tests/testprocs" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/third_party/java/src" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tools" />
+          <root url="file://$MODULE_DIR$/../../../codeFromGithub/voltdb/voltdb-voltdb-7.0.1/tools/lbd_lock_test" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">
@@ -29,26 +106,11 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://D:/软件/sdk/jar/postgresql-9.2-1003-jdbc4.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://D:/软件/sdk/jar/netty-all-4.1.6.Final.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="library" name="Maven: junit:junit:4.12" level="project" />
-    <orderEntry type="library" name="Maven: org.hamcrest:hamcrest-core:1.3" level="project" />
+    <orderEntry type="library" name="Maven: com.microsoft.sqlserver:sqljdbc4:4.0" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-all:4.0.25.Final" level="project" />
+    <orderEntry type="library" name="Maven: org.voltdb:voltdbclient:6.9" level="project" />
+    <orderEntry type="library" name="Maven: org.aspectj:aspectjrt:unknown" level="project" />
+    <orderEntry type="library" name="Maven: com.google.code.gson:gson:2.7" level="project" />
     <orderEntry type="library" name="Maven: org.apache.kafka:kafka-clients:0.10.1.0" level="project" />
     <orderEntry type="library" name="Maven: net.jpountz.lz4:lz4:1.3.0" level="project" />
     <orderEntry type="library" name="Maven: org.xerial.snappy:snappy-java:1.1.2.6" level="project" />
@@ -63,12 +125,12 @@
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.6.3" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.6.0" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.6.3" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: junit:junit:4.12" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.hamcrest:hamcrest-core:1.3" level="project" />
     <orderEntry type="library" name="Maven: log4j:log4j:1.2.16" level="project" />
     <orderEntry type="library" name="Maven: org.apache.zookeeper:zookeeper:3.4.6" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-log4j12:1.6.1" level="project" />
     <orderEntry type="library" name="Maven: jline:jline:0.9.94" level="project" />
-    <orderEntry type="library" name="Maven: com.microsoft.sqlserver:sqljdbc4:4.0" level="project" />
     <orderEntry type="library" name="Maven: commons-io:commons-io:2.5" level="project" />
-    <orderEntry type="library" name="Maven: org.voltdb:voltdbclient:6.9" level="project" />
   </component>
 </module>

@@ -24,4 +24,15 @@ public class PurgeVoltProcedureTest {
         assertTrue(procedure1.hashCode()==procedure2.hashCode());
     }
 
+    @Test
+    public void convertWithStr(){
+        PurgeVoltProcedure procedure = new PurgeVoltProcedure();
+        procedure.setProcedureName("Hello");
+        procedure.setParams(new String[]{"1","2"});
+        String str = procedure.toString();
+        System.out.println(str);
+        PurgeVoltProcedure procedure1 = PurgeVoltProcedure.parseProcedureFromStr(str);
+        assertTrue(procedure.equals(procedure1));
+    }
+
 }

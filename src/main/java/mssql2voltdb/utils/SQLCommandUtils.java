@@ -6,6 +6,7 @@ import org.voltdb.client.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * voltdb的常用方法
@@ -39,6 +40,37 @@ public class SQLCommandUtils {
         }
         return  client;
     };
+
+    /**
+     * 用于voltdb连接到集群，获取Client，等到所有的连接建立后才返回
+     * @param servers
+     * @param userName
+     * @param passWord
+     * @return
+     * @throws InterruptedException
+     */
+    public static Client getClientWithMultiConn(String servers,String userName,String passWord) throws InterruptedException {
+        ClientConfig clientConfig=new ClientConfig(userName,passWord);
+        clientConfig.setTopologyChangeAware(true);
+        String[] serverList=servers.split(",");
+        Client client=ClientFactory.createClient(clientConfig);
+        CountDownLatch connections=new CountDownLatch(serverList.length);
+        for(String server:serverList){
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        client.createConnection(server);
+                        connections.countDown();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+        }
+        connections.await();
+        return client;
+    }
 
     /**
      * 把jar包加载到client中，跟sqlcmd的load Classes from  xxx.jar功能一样

@@ -33,7 +33,7 @@ public class PurgeServer {
 
     public void start(){
         EventLoopGroup bossGroup=new NioEventLoopGroup(1);
-        EventLoopGroup workerGroup=new NioEventLoopGroup(3);
+        EventLoopGroup workerGroup=new NioEventLoopGroup(1);
         try{
             ServerBootstrap bootstrap=new ServerBootstrap();
             bootstrap.channel(NioServerSocketChannel.class)

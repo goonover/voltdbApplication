@@ -1,0 +1,5 @@
+<aspectj>
+    <aspects>
+        <aspect name="cache.aop.voltCacheAspect"></aspect>
+    </aspects>
+</aspectj>
