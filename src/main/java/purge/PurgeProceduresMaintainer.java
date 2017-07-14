@@ -30,9 +30,7 @@ public class PurgeProceduresMaintainer extends Maintainer<PurgeVoltProcedure>{
      */
     @Override
     void readRulesFromFile() throws IOException {
-        if(aofOn){
-            aofWriter.restoreFromLog();
-        }else {
+        if(!aofOn){
             BufferedReader reader = Files.newBufferedReader(rulePath);
             String line;
             while ((line = reader.readLine()) != null) {

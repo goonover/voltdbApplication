@@ -30,9 +30,7 @@ public class SQLRulesMaintainer extends Maintainer<SQLRule> {
 
     @Override
     void readRulesFromFile() throws IOException {
-        if(aofOn){
-            aofWriter.restoreFromLog();
-        }else {
+        if(!aofOn){
             List<SQLRule> rulesParsed = parseOperationsFromFile(rulePath.toString());
             for (SQLRule rule : rulesParsed) {
                 rules.add(rule);

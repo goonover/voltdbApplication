@@ -60,13 +60,16 @@ public abstract class Maintainer<T> extends Thread {
         }
     }
 
+    /**
+     * 快照模式采用，每隔一段时间把当前的规则列表写到文档当中，增量日志模式应该永不调用
+     */
     @Override
     public void run(){
         if(modified)
             writeRulesToFile();
     }
 
-    public void shutdown(){
+    void shutdown(){
         if(modified)
             writeRulesToFile();
     }
@@ -146,7 +149,15 @@ public abstract class Maintainer<T> extends Thread {
     };
 
     protected void aofRemoveRule(T rule){
-        rules.add(rule);
+        rules.remove(rule);
     };
+
+    /**
+     * 返回容器中拥有的记录数，以免调用{@link Maintainer#getRules()}然后再获取size，减少一次list的构造
+     * @return  记录条数
+     */
+    protected int getSize(){
+        return rules.size();
+    }
 
 }
